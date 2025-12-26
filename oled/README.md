@@ -16,10 +16,14 @@ Hold the BOOTSEL button until BEFORE AND WHILE plugging the micro USB.
 
 Copy the UF2 file to the pico 2W:
 ```
-cp blink.uf2 /run/media/boat/RP2350/
+cp blink.uf2 /mnt/pico 
+```
+or 
+```
+picotool load picoproj.uf2 && picotool reboot
 ```
 
-Device might show up as hardware in `lsblk` too with a /dev/sdX mountpoint.
+Device might show up as hardware in `lsblk` too with a /dev/sdX mountpoint. Update `/etc/fstab` to auto mount
 
 # Reading serial output
 ```

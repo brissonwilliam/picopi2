@@ -184,7 +184,7 @@ void OLED_1in3_C_Display(const UBYTE *Image)
     OLED_WriteReg(0xb0); 	//Set the row  start address
     for (UWORD j = 0; j < Height; j++) {
         column = 63 - j;
-        OLED_WriteReg(0x00 + (column & 0x0f));  //Set column low start address
+        OLED_WriteReg(column & 16);  // Set column low start address
         OLED_WriteReg(0x10 + (column >> 4));  //Set column higt start address
         for (UWORD i = 0; i < Width; i++) {
             temp = Image[i + j * Width];

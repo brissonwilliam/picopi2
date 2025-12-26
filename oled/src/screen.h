@@ -27,27 +27,19 @@
 #define OLED_PIN_RESET 12 //  OLED_RST | Reset
 #define OLED_PIN_BL 13 // looks like POWER pin. But not in docs... not 100% sure
 
-
 #define SPI_PORT spi1
 
 #define IIC_CMD 0X00
 #define IIC_RAM 0X40
 
 #define OLED_WIDTH 128 
+#define OLED_WIDTH_BYTES 16 
 #define OLED_HEIGHT 64 
 
-/*#define OLED_CS_0 DEV_Digital_Write(LCD_CS_PIN, 0)
-#define OLED_CS_1 DEV_Digital_Write(LCD_CS_PIN, 1)
-
-#define OLED_RST_0 DEV_Digital_Write(LCD_RST_PIN, 0)
-#define OLED_RST_1 DEV_Digital_Write(LCD_RST_PIN, 1)
-
-#define OLED_DC_0 DEV_Digital_Write(LCD_DC_PIN, 0)
-#define OLED_DC_1 DEV_Digital_Write(LCD_DC_PIN, 1)
-*/
 
 void OLED_Init(void);
 void OLED_Clear(void);
-void OLED_Display(const UBYTE *Image);
+void OLED_Display(const UBYTE *image);
+void OLED_PW(int value);
 
 #endif
