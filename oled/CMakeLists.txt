@@ -16,7 +16,9 @@ project(picoproj)
 add_executable(picoproj
     main.c
     src/screen.c
-    src/screen.h
+    src/screen.c
+    src/draw.h
+    src/draw.c
 )
 
 # Add pico_stdlib library which aggregates commonly used features

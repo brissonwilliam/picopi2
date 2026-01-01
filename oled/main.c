@@ -30,7 +30,7 @@ int main() {
   OLED_Init();
   OLED_Clear();
 
-  UBYTE *image;
+  UBYTE *image = {0};
   UWORD size = OLED_WIDTH_BYTES * OLED_HEIGHT;
   if ((image = (UBYTE *)malloc(size)) == NULL) {
     while (1) {
@@ -39,26 +39,24 @@ int main() {
     }
   }
 
-  int i = 0;
   bool led = true;
   pico_set_led(led);
 
   while (true) {
-    for (i = 1; i < size; i++) {
-      int j = i * OLED_HEIGHT;
-      if (j < size) {
-        image[j] = 255;
-        image[j - 1] = 0;
+    for (int y = 0; y < OLED_HEIGHT; y++) {
+      int start = time_us_64();
+
+      for (int x = 0; x < OLED_WIDTH_BYTES; x++) {
+        image[y * OLED_WIDTH_BYTES + x] = 255;
       }
-      image[i] = 255;
-      image[i - 1] = 0;
+
       OLED_Display(image);
-      sleep_ms(16);
+
+      memset(image, 0, size);
+
+      uint64_t delta = (time_us_64() - start);
+      sleep_us(16666 - delta);
     }
-
-    printf("reached max size. Clearing \n");
-
-    memset(image, 0, size);
 
     led = !led;
     pico_set_led(led);

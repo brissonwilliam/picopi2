@@ -86,23 +86,6 @@ static void OLED_InitReg(void) {
   OLED_WriteReg(0x8a); /*Set DC-DC enable (a=0:disable; a=1:enable) */
 }
 
-void OLED_Clear() {
-  UWORD column;
-  OLED_WriteReg(0xb0); // Set the row  start address
-  for (UWORD y = 0; y < OLED_HEIGHT; y++) {
-    column = 63 - y;
-    // Set column low start address (to low 4 bits)
-    OLED_WriteReg(0x00 + (column & 0x0f));
-    // Set column high start address (to low always on 4bits (16) + the high 12
-    // bits of) column)
-    OLED_WriteReg(0x10 + (column >> 4));
-
-    for (UWORD x = 0; x < OLED_WIDTH_BYTES; x++) {
-      OLED_WriteData(0x00);
-    }
-  }
-}
-
 static UBYTE reverse(UBYTE temp) {
   temp = ((temp & 0x55) << 1) | ((temp & 0xaa) >> 1);
   temp = ((temp & 0x33) << 2) | ((temp & 0xcc) >> 2);
@@ -127,6 +110,19 @@ void set_col_cmd(uint8_t col) {
   OLED_WriteReg(0x10 + (col >> 4));
 }
 
+void OLED_Clear() {
+  UWORD column;
+  set_page_cmd(0);
+  for (UWORD y = 0; y < OLED_HEIGHT; y++) {
+    column = 63 - y;
+    set_col_cmd(column);
+
+    for (UWORD x = 0; x < OLED_WIDTH_BYTES; x++) {
+      OLED_WriteData(0x00);
+    }
+  }
+}
+
 void OLED_Display(const UBYTE *image) {
   UWORD column, temp;
 
@@ -139,8 +135,8 @@ void OLED_Display(const UBYTE *image) {
     for (UWORD x = 0; x < OLED_WIDTH_BYTES; x++) {
       temp = image[x + y * OLED_WIDTH_BYTES];
       temp = reverse(temp); // reverse the buffer
-      // When in data mode, each byte write will auto increment the page and column
-      // address registries in the controller
+      // When in data mode, each byte write will auto increment the page and
+      // column address registries in the controller
       OLED_WriteData(temp);
     }
   }

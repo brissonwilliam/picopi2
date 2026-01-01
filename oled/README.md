@@ -12,6 +12,14 @@ make
 ```
 
 # Deploy firmware
+```
+make && picotool load -x -f picoproj.uf2 
+```
+`-f` flag forces device into BOOTSEL mode to flash unplug and replug in BOOTSELF
+`-x` is to execute after flashing (reboot, don't wait for auto reboot from device which is a few seconds)
+
+
+**Legacy way**:
 Hold the BOOTSEL button until BEFORE AND WHILE plugging the micro USB.
 
 Copy the UF2 file to the pico 2W:
