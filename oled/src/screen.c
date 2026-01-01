@@ -1,74 +1,11 @@
+// Code for the SH1107 controller
+// References:
+// https://chatgpt.com/c/6956b548-71f4-8329-91c9-e35036917ddc
+// https://www.waveshare.com/wiki/Pico-OLED-1.3
+// https://files.waveshare.com/upload/5/58/SH1107Datasheet.pdf
 #include "screen.h"
 #include "stdio.h"
 #include <hardware/gpio.h>
-
-/**
- * SPI
- **/
-/*
-void gpio_init(UWORD Pin, UWORD Mode)
-{
-    gpio_init(Pin);
-    if(Mode == 0 || Mode == GPIO_IN) {
-        gpio_set_dir(Pin, GPIO_IN);
-    } else {
-        gpio_set_dir(Pin, GPIO_OUT);
-    }
-}
-
-void DEV_Digital_Write(UWORD Pin, UBYTE Value)
-{
-    gpio_put(Pin, Value);
-}
-
-UBYTE DEV_Digital_Read(UWORD Pin)
-{
-    return gpio_get(Pin);
-}
-
-
-void DEV_SPI_WriteByte(uint8_t Value) {
-  spi_write_blocking(SPI_PORT, &Value, 1);
-}
-
-void DEV_SPI_Write_nByte(uint8_t pData[], uint32_t Len) {
-  spi_write_blocking(SPI_PORT, pData, Len);
-}
-#define OLED_CS_0 DEV_Digital_Write(LCD_CS_PIN, 0)
-#define OLED_CS_1 DEV_Digital_Write(LCD_CS_PIN, 1)
-
-#define OLED_RST_0 DEV_Digital_Write(LCD_RST_PIN, 0)
-#define OLED_RST_1 DEV_Digital_Write(LCD_RST_PIN, 1)
-
-#define OLED_DC_0 DEV_Digital_Write(LCD_DC_PIN, 0)
-#define OLED_DC_1 DEV_Digital_Write(LCD_DC_PIN, 1)
-
-
-static void OLED_WriteReg(uint8_t Reg)
-{
-#if USE_SPI
-    OLED_DC_0;
-    OLED_CS_0;
-    DEV_SPI_WriteByte(Reg);
-    OLED_CS_1;
-#elif USE_IIC
-    I2C_Write_Byte(Reg,IIC_CMD);
-#endif
-}
-
-static void OLED_WriteData(uint8_t Data)
-{
-#if USE_SPI
-    OLED_DC_1;
-    OLED_CS_0;
-    DEV_SPI_WriteByte(Data);
-    OLED_CS_1;
-#elif USE_IIC
-    I2C_Write_Byte(Data,IIC_RAM);
-#endif
-}
-
-*/
 
 // now() returns time since boot in ms
 inline static uint32_t now() { return to_ms_since_boot(get_absolute_time()); }
@@ -89,11 +26,11 @@ inline static void spi_write_bytes(uint8_t pData[], uint32_t Len) {
 
 static void OLED_Reset(void) {
   gpio_put(OLED_PIN_RESET, 1);
-  heavy_sleep_ms(100);
+  heavy_sleep_ms(50);
   gpio_put(OLED_PIN_RESET, 0);
-  heavy_sleep_ms(100);
+  heavy_sleep_ms(50);
   gpio_put(OLED_PIN_RESET, 1);
-  heavy_sleep_ms(100);
+  heavy_sleep_ms(50);
 }
 
 static void OLED_WriteReg(uint8_t reg) {
@@ -173,20 +110,37 @@ static UBYTE reverse(UBYTE temp) {
   return temp;
 }
 
+// sets the controller in column addressing mode at a specific page
+void set_page_cmd(uint8_t page) {
+  // 0xB = 0b1101 (page set command) + page adddress
+  OLED_WriteReg(0xB0 + (page & 0xf));
+}
+
+// sets the controller at a specific colum to write bytes to
+void set_col_cmd(uint8_t col) {
+  // A column is 7 bit, but we can only address 4 bits per command (8 bit)
+  // 0x00 (indicates the following 4bits is the lower nibble of the column
+  // address) + lower 4 bits of col
+  OLED_WriteReg(0x00 + (col & 0x0f));
+  // 0x10 indicates the following 4bits are the upper address of column + upper
+  // 4 bits of col
+  OLED_WriteReg(0x10 + (col >> 4));
+}
+
 void OLED_Display(const UBYTE *image) {
   UWORD column, temp;
-  OLED_WriteReg(0xb0); // Set the row  start address
+
+  set_page_cmd(0);
+
   for (UWORD y = 0; y < OLED_HEIGHT; y++) {
     column = 63 - y;
-    // Set column low start address (to low 4 bits)
-    OLED_WriteReg(0x00 + (column & 0x0f));
-    // Set column high start address (to low always on 4bits (16) + the high 12
-    // bits of) column)
-    OLED_WriteReg(0x10 + (column >> 4));
+    set_col_cmd(column);
 
     for (UWORD x = 0; x < OLED_WIDTH_BYTES; x++) {
       temp = image[x + y * OLED_WIDTH_BYTES];
       temp = reverse(temp); // reverse the buffer
+      // When in data mode, each byte write will auto increment the page and column
+      // address registries in the controller
       OLED_WriteData(temp);
     }
   }
@@ -236,7 +190,7 @@ void OLED_Init() {
   // Set the initialization register
   printf("registry init");
   OLED_InitReg();
-  heavy_sleep_ms(200);
+  heavy_sleep_ms(50);
 
   // Turn on the OLED display
   OLED_WriteReg(0xaf);
