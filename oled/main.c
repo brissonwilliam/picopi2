@@ -1,4 +1,5 @@
 #include "pico/cyw43_arch.h"
+#include "src/draw.h"
 #include "src/screen.h"
 #include "stdio.h"
 #include <pico/time.h>
@@ -43,34 +44,17 @@ int main() {
   pico_set_led(led);
 
   while (true) {
-    for (int y = 0; y < OLED_HEIGHT; y++) {
-      int start = time_us_64();
+    int start = time_us_64();
 
-      for (int x = 0; x < OLED_WIDTH_BYTES; x++) {
-        image[y * OLED_WIDTH_BYTES + x] = 255;
-      }
+    draw_text(image, 20, 20, "coucou amelie <3");
+    draw_text(image, 20, 40, "woooooooooooooooooooooooooo!!");
+    OLED_Display(image);
+    memset(image, 0, size);
 
-      OLED_Display(image);
-
-      memset(image, 0, size);
-
-      uint64_t delta = (time_us_64() - start);
-      sleep_us(16666 - delta);
-    }
+    uint64_t delta = (time_us_64() - start);
+    sleep_us(33333 * 2 - delta);
 
     led = !led;
     pico_set_led(led);
   }
 }
-
-/*
-#include <malloc.h>
-void print_memory_usage() {
-    struct mallinfo info = mallinfo();
-
-    printf("Total allocated: %d bytes\n", info.uordblks);
-    printf("Total free: %d bytes\n", info.fordblks);
-    printf("Total heap size: %d bytes\n", info.arena);
-    printf("Largest free block: %d bytes\n", info.ordblks);
-}
-*/

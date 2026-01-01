@@ -101,15 +101,53 @@ const uint8_t font_petme128_8x8[][8] = {
 };
 
 
-void draw_text(uint8_t start_x, uint8_t start_y, const char* c, int size) {
-    for (int i = 0; i < size; i++) {
-        char ch = c[i];
-        if (ch < 32 || ch > 127) {
-            ch = '.'; // Replace unsupported characters 
+void draw_pixel(UBYTE* image, uint8_t x, uint8_t y) {
+    UBYTE col = x / 8; // get the byte column that contains the bit to update
+    // Pixels are represented by bits. Turn on the nth bit of the byte 
+    // The most-left pixel is on the higher nibble, so not at bit position 0, but bit position 7
+    UBYTE update =  1 << (7 - (x%8));
+    image[y * OLED_WIDTH_BYTES + col] |= update; 
+}
+
+const int font_size_x = 8;
+const int font_size_y = 8;
+
+void draw_char(UBYTE* image, uint8_t start_x, uint8_t start_y, char c) {
+}
+
+void draw_text(UBYTE* image, uint8_t start_x, uint8_t start_y, const char* text) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        // Draw the char
+        unsigned char c = text[i];
+        if (c < 32 || c > 127) {
+            c = '.'; // Replace unsupported characters 
         }
-        for (uint8_t row = 0; row < 8; row++) {
-            uint8_t line = font_petme128_8x8[ch - 32][row];
-            for (uint8_t col = 0; col < 8; col++) {
+
+        // Font data is 'n' columns of bytes, where each byte bit
+        // is the state for each row starting from 0 to 1
+        const uint8_t *face = font_petme128_8x8[c-32];
+
+        for (int col =0; col < font_size_x; col++) {
+
+            uint8_t face_row = face[col];
+            uint8_t x = start_x + col;
+            for (int row=0; row < font_size_y; row++) {
+                uint8_t y = start_y + row;
+
+                uint8_t is_on = (face_row >>  row) & 0x1;
+                if (is_on) {
+                    draw_pixel(image, x, y);
+                }
+            }
+        }
+        
+        // Update positions. Warp if necessary
+        start_x += font_size_x;
+        if (start_x + font_size_x >= OLED_WIDTH) {
+            start_x = 0;
+            start_y += font_size_y;
+            if (start_y + font_size_y >=OLED_HEIGHT) {
+                return;
             }
         }
     }
